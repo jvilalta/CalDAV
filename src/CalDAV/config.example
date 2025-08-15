@@ -1,0 +1,35 @@
+# CalDAV Client Configuration Example
+
+# Copy this file to appsettings.json or set as environment variables
+
+# CalDAV Server Configuration
+CALDAV_SERVER=https://your-caldav-server.com/caldav/
+CALDAV_USERNAME=your-username
+CALDAV_PASSWORD=your-password
+
+# Common CalDAV Server Examples:
+
+# Google Calendar (requires app-specific password)
+# CALDAV_SERVER=https://apidata.googleusercontent.com/caldav/v2/
+# CALDAV_USERNAME=your-email@gmail.com
+# CALDAV_PASSWORD=your-app-specific-password
+
+# iCloud Calendar
+# CALDAV_SERVER=https://caldav.icloud.com/
+# CALDAV_USERNAME=your-apple-id@icloud.com
+# CALDAV_PASSWORD=your-app-specific-password
+
+# Nextcloud
+# CALDAV_SERVER=https://your-nextcloud.com/remote.php/dav/
+# CALDAV_USERNAME=your-nextcloud-username
+# CALDAV_PASSWORD=your-nextcloud-password
+
+# Microsoft Exchange (if CalDAV is enabled)
+# CALDAV_SERVER=https://your-exchange-server.com/EWS/
+# CALDAV_USERNAME=your-domain\username
+# CALDAV_PASSWORD=your-password
+
+# Radicale
+# CALDAV_SERVER=http://localhost:5232/
+# CALDAV_USERNAME=your-username
+# CALDAV_PASSWORD=your-password
