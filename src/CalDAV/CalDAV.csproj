@@ -1,10 +1,52 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <!-- Target framework and basic settings -->
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    
+    <!-- Package Metadata -->
+    <PackageId>jvilalta.CalDAV</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>CalDAV Client for .NET</Title>
+    <Authors>jvilalta</Authors>
+    <Company>jvilalta</Company>
+    <Product>CalDAV Client</Product>
+    <Description>A modern .NET 9 CalDAV client library that allows you to connect to CalDAV servers and manage calendar events. Supports calendar discovery, event CRUD operations, and full iCalendar (RFC 5545) format compatibility.</Description>
+    <Summary>CalDAV client library for .NET 9 with support for calendar and event management</Summary>
+    <PackageTags>caldav;calendar;icalendar;events;scheduling;rfc5545;webdav;dotnet9</PackageTags>
+    <PackageProjectUrl>https://github.com/jvilalta/CalDAV</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jvilalta/CalDAV</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>Initial release of CalDAV Client for .NET 9. Features include calendar discovery, event management, and iCalendar support.</PackageReleaseNotes>
+    <Copyright>Copyright (c) 2024 jvilalta</Copyright>
+    
+    <!-- Documentation and Symbols -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
+    <!-- Assembly Information -->
+    <AssemblyTitle>CalDAV Client</AssemblyTitle>
+    <AssemblyDescription>CalDAV client library for .NET 9</AssemblyDescription>
+    <AssemblyCompany>jvilalta</AssemblyCompany>
+    <AssemblyProduct>CalDAV Client</AssemblyProduct>
+    <AssemblyCopyright>Copyright (c) 2024 jvilalta</AssemblyCopyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    
+    <!-- NuGet Package Information -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <!-- Include README in package -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

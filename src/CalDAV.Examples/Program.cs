@@ -1,8 +1,7 @@
 using CalDAV;
 using CalDAV.Utils;
-using CalDAV.Examples;
 
-namespace CalDAV;
+namespace CalDAV.Examples;
 
 /// <summary>
 /// Example program demonstrating how to use the CalDAV client
@@ -11,8 +10,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        Console.WriteLine("CalDAV Client for C#");
-        Console.WriteLine("===================");
+        Console.WriteLine("CalDAV Client for C# - Examples");
+        Console.WriteLine("================================");
 
         // Check if user wants to run advanced example
         if (args.Length > 0 && args[0].ToLower() == "advanced")
@@ -158,34 +157,5 @@ class Program
         Console.WriteLine("To run the advanced example: dotnet run advanced");
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey();
-    }
-
-    /// <summary>
-    /// Reads password from console without displaying characters
-    /// </summary>
-    private static string ReadPassword()
-    {
-        var password = "";
-        ConsoleKeyInfo key;
-        
-        do
-        {
-            key = Console.ReadKey(true);
-            
-            if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
-            {
-                password += key.KeyChar;
-                Console.Write("*");
-            }
-            else if (key.Key == ConsoleKey.Backspace && password.Length > 0)
-            {
-                password = password.Substring(0, password.Length - 1);
-                Console.Write("\b \b");
-            }
-        }
-        while (key.Key != ConsoleKey.Enter);
-        
-        Console.WriteLine();
-        return password;
     }
 }
