@@ -10,7 +10,7 @@
     
     <!-- Package Metadata -->
     <PackageId>jvilalta.CalDAV</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>2.0.0</PackageVersion>
     <Title>CalDAV Client for .NET</Title>
     <Authors>jvilalta</Authors>
     <Company>jvilalta</Company>
@@ -37,8 +37,8 @@
     <AssemblyCompany>jvilalta</AssemblyCompany>
     <AssemblyProduct>CalDAV Client</AssemblyProduct>
     <AssemblyCopyright>Copyright (c) 2024 jvilalta</AssemblyCopyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
     
     <!-- NuGet Package Information -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -47,6 +47,9 @@
   <!-- Include README in package -->
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Ical.Net" Version="4.2.0" />
   </ItemGroup>
 
 </Project>

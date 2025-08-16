@@ -1,5 +1,6 @@
 using System.Xml;
 using CalDAV.Models;
+using Ical.Net;
 
 namespace CalDAV.Utils;
 
@@ -11,9 +12,9 @@ public static class CalDAVXmlParser
     /// <summary>
     /// Parses calendar list from PROPFIND response
     /// </summary>
-    public static List<Calendar> ParseCalendarList(string xmlResponse)
+    public static List<Models.Calendar> ParseCalendarList(string xmlResponse)
     {
-        var calendars = new List<Calendar>();
+        var calendars = new List<Models.Calendar>();
         var doc = new XmlDocument();
         doc.LoadXml(xmlResponse);
 
@@ -30,7 +31,7 @@ public static class CalDAVXmlParser
             var resourceType = response.SelectSingleNode(".//d:resourcetype/c:calendar", namespaceManager);
             if (resourceType == null) continue; // Not a calendar
 
-            var calendar = new Calendar();
+            var calendar = new Models.Calendar();
             
             var href = response.SelectSingleNode("d:href", namespaceManager);
             if (href != null) calendar.Url = href.InnerText;
@@ -56,9 +57,9 @@ public static class CalDAVXmlParser
     /// <summary>
     /// Parses calendar events from REPORT response
     /// </summary>
-    public static List<CalendarEvent> ParseCalendarEvents(string xmlResponse)
+    public static List<Models.CalendarEvent> ParseCalendarEvents(string xmlResponse)
     {
-        var events = new List<CalendarEvent>();
+        var events = new List<Models.CalendarEvent>();
         var doc = new XmlDocument();
         doc.LoadXml(xmlResponse);
 
@@ -74,7 +75,7 @@ public static class CalDAVXmlParser
             var calendarData = response.SelectSingleNode(".//c:calendar-data", namespaceManager);
             if (calendarData == null) continue;
 
-            var calEvent = new CalendarEvent();
+            var calEvent = new Models.CalendarEvent();
             
             var href = response.SelectSingleNode("d:href", namespaceManager);
             if (href != null) calEvent.Href = href.InnerText;
@@ -92,67 +93,58 @@ public static class CalDAVXmlParser
     }
 
     /// <summary>
-    /// Parses basic iCalendar data into CalendarEvent properties
+    /// Parses iCalendar data using Ical.Net library into CalendarEvent properties
     /// </summary>
-    private static void ParseICalendarData(CalendarEvent calEvent)
+    private static void ParseICalendarData(Models.CalendarEvent calEvent)
     {
-        var lines = calEvent.ICalendarData.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        
-        foreach (var line in lines)
+        try
         {
-            var trimmedLine = line.Trim();
+            var calendar = Ical.Net.Calendar.Load(calEvent.ICalendarData);
+            var vcalendarEvent = calendar.Events?.FirstOrDefault();
             
-            if (trimmedLine.StartsWith("UID:"))
-                calEvent.Uid = trimmedLine.Substring(4);
-            else if (trimmedLine.StartsWith("SUMMARY:"))
-                calEvent.Summary = trimmedLine.Substring(8);
-            else if (trimmedLine.StartsWith("DESCRIPTION:"))
-                calEvent.Description = trimmedLine.Substring(12);
-            else if (trimmedLine.StartsWith("LOCATION:"))
-                calEvent.Location = trimmedLine.Substring(9);
-            else if (trimmedLine.StartsWith("ORGANIZER:"))
-                calEvent.Organizer = trimmedLine.Substring(10);
-            else if (trimmedLine.StartsWith("DTSTART:"))
-            {
-                calEvent.StartTime = ParseICalendarDateTime(trimmedLine.Substring(8));
-            }
-            else if (trimmedLine.StartsWith("DTEND:"))
-            {
-                calEvent.EndTime = ParseICalendarDateTime(trimmedLine.Substring(6));
-            }
-            else if (trimmedLine.StartsWith("ATTENDEE:"))
-            {
-                calEvent.Attendees.Add(trimmedLine.Substring(9));
-            }
-        }
-    }
+            if (vcalendarEvent == null) return;
 
-    /// <summary>
-    /// Parses iCalendar datetime format
-    /// </summary>
-    private static DateTime ParseICalendarDateTime(string dateTimeString)
-    {
-        // Handle UTC times (ending with Z)
-        if (dateTimeString.EndsWith("Z"))
-        {
-            var dateOnly = dateTimeString.Substring(0, dateTimeString.Length - 1);
-            if (DateTime.TryParseExact(dateOnly, "yyyyMMddTHHmmss", null, 
-                System.Globalization.DateTimeStyles.None, out var utcTime))
-            {
-                return DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
-            }
-        }
-        else
-        {
-            // Handle local times or other formats
-            if (DateTime.TryParseExact(dateTimeString, "yyyyMMddTHHmmss", null, 
-                System.Globalization.DateTimeStyles.None, out var localTime))
-            {
-                return localTime;
-            }
-        }
+            // Map properties from Ical.Net event to our CalendarEvent
+            calEvent.Uid = vcalendarEvent.Uid ?? string.Empty;
+            calEvent.Summary = vcalendarEvent.Summary ?? string.Empty;
+            calEvent.Description = vcalendarEvent.Description ?? string.Empty;
+            calEvent.Location = vcalendarEvent.Location ?? string.Empty;
 
-        return DateTime.MinValue;
+            // Handle organizer
+            if (vcalendarEvent.Organizer != null)
+            {
+                calEvent.Organizer = vcalendarEvent.Organizer.Value?.ToString() ?? string.Empty;
+            }
+
+            // Handle date/time properties - use Value property to get DateTime
+            if (vcalendarEvent.Start != null)
+            {
+                calEvent.StartTime = vcalendarEvent.Start.Value;
+            }
+
+            if (vcalendarEvent.End != null)
+            {
+                calEvent.EndTime = vcalendarEvent.End.Value;
+            }
+
+            // Handle attendees
+            calEvent.Attendees.Clear();
+            if (vcalendarEvent.Attendees != null)
+            {
+                foreach (var attendee in vcalendarEvent.Attendees)
+                {
+                    if (attendee.Value != null)
+                    {
+                        calEvent.Attendees.Add(attendee.Value.ToString());
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // If parsing fails, leave the properties as they are
+            // The raw ICalendarData is still available for fallback
+        }
     }
 
     /// <summary>
