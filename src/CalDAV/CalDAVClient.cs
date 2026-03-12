@@ -51,13 +51,6 @@ public class CalDAVClient : IDisposable
         }
     }
 
-    private static AuthenticationHeaderValue CreateAuthenticationHeaderValue(string username, string password)
-    {
-        var authValue = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
-        var authenticationHeaderValue = new AuthenticationHeaderValue("Basic", authValue);
-        return authenticationHeaderValue;
-    }
-
     /// <summary>
     /// Tests the connection to the CalDAV server
     /// </summary>
@@ -254,5 +247,12 @@ public class CalDAVClient : IDisposable
     public void Dispose()
     {
         _httpClient?.Dispose();
+    }
+
+    private static AuthenticationHeaderValue CreateAuthenticationHeaderValue(string username, string password)
+    {
+        var authValue = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
+        var authenticationHeaderValue = new AuthenticationHeaderValue("Basic", authValue);
+        return authenticationHeaderValue;
     }
 }
