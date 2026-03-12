@@ -37,12 +37,15 @@ public class CalDAVClient : IDisposable
     /// <summary>
     /// Tests the connection to the CalDAV server
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     /// <returns>True if connection is successful, false otherwise</returns>
     public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Options, _credentials.ServerUrl), cancellationToken);
+            var response = await _httpClient.SendAsync(
+                new HttpRequestMessage(HttpMethod.Options, _credentials.ServerUrl),
+                cancellationToken);
             return response.IsSuccessStatusCode;
         }
         catch
@@ -54,6 +57,7 @@ public class CalDAVClient : IDisposable
     /// <summary>
     /// Discovers and initializes the CalDAV service endpoints
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     public async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -76,6 +80,7 @@ public class CalDAVClient : IDisposable
     /// <summary>
     /// Gets the list of available calendars
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     /// <returns>List of calendars</returns>
     public async Task<List<Calendar>> GetCalendarsAsync(CancellationToken cancellationToken = default)
     {
@@ -105,7 +110,7 @@ public class CalDAVClient : IDisposable
     /// <param name="calendarUrl">The URL of the calendar</param>
     /// <param name="startTime">Optional start time filter</param>
     /// <param name="endTime">Optional end time filter</param>
-    /// <param name="cancellationToken">The cancellation token</param>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     /// <returns>List of calendar events</returns>
     public async Task<List<CalendarEvent>> GetEventsAsync(string calendarUrl, DateTime? startTime = null, DateTime? endTime = null, CancellationToken cancellationToken = default)
     {
@@ -127,7 +132,7 @@ public class CalDAVClient : IDisposable
     /// <param name="calendarUrl">The URL of the calendar</param>
     /// <param name="eventData">The iCalendar data for the event</param>
     /// <param name="eventUid">Optional UID for the event (will be generated if not provided)</param>
-    /// <param name="cancellationToken">The cancellation token</param>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     /// <returns>The URL of the created event</returns>
     public async Task<string> CreateEventAsync(string calendarUrl, string eventData, string? eventUid = null, CancellationToken cancellationToken = default)
     {
@@ -150,7 +155,7 @@ public class CalDAVClient : IDisposable
     /// <param name="eventUrl">The URL of the event to update</param>
     /// <param name="eventData">The updated iCalendar data</param>
     /// <param name="etag">The ETag of the event for optimistic concurrency</param>
-    /// <param name="cancellationToken">The cancellation token</param>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     public async Task UpdateEventAsync(string eventUrl, string eventData, string? etag = null, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Put, eventUrl);
@@ -170,7 +175,7 @@ public class CalDAVClient : IDisposable
     /// </summary>
     /// <param name="eventUrl">The URL of the event to delete</param>
     /// <param name="etag">The ETag of the event for optimistic concurrency</param>
-    /// <param name="cancellationToken">The cancellation token</param>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
     public async Task DeleteEventAsync(string eventUrl, string? etag = null, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, eventUrl);

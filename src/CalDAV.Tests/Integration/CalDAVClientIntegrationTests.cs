@@ -45,7 +45,7 @@ public class CalDAVClientIntegrationTests
     public async Task TestConnectionAsync_WithValidCredentials_ShouldReturnTrue()
     {
         // Act
-        var result = await _client!.TestConnectionAsync();
+        var result = await _client!.TestConnectionAsync(TestContext.CurrentContext.CancellationToken);
 
         // Assert
         result.Should().BeTrue();
@@ -55,7 +55,7 @@ public class CalDAVClientIntegrationTests
     public async Task InitializeAsync_WithValidServer_ShouldReturnTrue()
     {
         // Act
-        var result = await _client!.InitializeAsync();
+        var result = await _client!.InitializeAsync(TestContext.CurrentContext.CancellationToken);
 
         // Assert
         result.Should().BeTrue();
@@ -64,11 +64,13 @@ public class CalDAVClientIntegrationTests
     [Test]
     public async Task GetCalendarsAsync_AfterInitialization_ShouldReturnCalendars()
     {
+        var ct = TestContext.CurrentContext.CancellationToken;
+
         // Arrange
-        await _client!.InitializeAsync();
+        await _client!.InitializeAsync(ct);
 
         // Act
-        var calendars = await _client.GetCalendarsAsync();
+        var calendars = await _client.GetCalendarsAsync(ct);
 
         // Assert
         calendars.Should().NotBeNull();
@@ -84,13 +86,15 @@ public class CalDAVClientIntegrationTests
     [Test]
     public async Task GetEventsAsync_WithValidCalendar_ShouldReturnEvents()
     {
+        var ct = TestContext.CurrentContext.CancellationToken;
+
         // Arrange
-        await _client!.InitializeAsync();
-        var calendars = await _client.GetCalendarsAsync();
+        await _client!.InitializeAsync(ct);
+        var calendars = await _client.GetCalendarsAsync(ct);
         calendars.Should().NotBeEmpty();
 
         // Act
-        var events = await _client.GetEventsAsync(calendars.First().Url);
+        var events = await _client.GetEventsAsync(calendars.First().Url, cancellationToken: ct);
 
         // Assert
         events.Should().NotBeNull();
@@ -100,9 +104,11 @@ public class CalDAVClientIntegrationTests
     [Test]
     public async Task CreateAndDeleteEvent_WithValidCalendar_ShouldWork()
     {
+        var ct = TestContext.CurrentContext.CancellationToken;
+
         // Arrange
-        await _client!.InitializeAsync();
-        var calendars = await _client.GetCalendarsAsync();
+        await _client!.InitializeAsync(ct);
+        var calendars = await _client.GetCalendarsAsync(ct);
         calendars.Should().NotBeEmpty();
         
         var testCalendar = calendars.First();
@@ -117,14 +123,14 @@ public class CalDAVClientIntegrationTests
         try
         {
             // Act - Create
-            var eventUrl = await _client.CreateEventAsync(testCalendar.Url, eventData);
+            var eventUrl = await _client.CreateEventAsync(testCalendar.Url, eventData, cancellationToken: ct);
 
             // Assert - Create
             eventUrl.Should().NotBeNullOrEmpty();
             eventUrl.Should().Contain(testCalendar.Url);
 
             // Act - Delete
-            await _client.DeleteEventAsync(eventUrl);
+            await _client.DeleteEventAsync(eventUrl, cancellationToken: ct);
 
             // Assert - Verify deletion by trying to get the specific event
             // This might throw an exception or return no events, both are acceptable
@@ -147,7 +153,7 @@ public class CalDAVClientInvalidCredentialsTests
         using var client = new CalDAVClient("https://invalid-server.example.com/caldav/", "invalid", "invalid");
 
         // Act
-        var result = await client.TestConnectionAsync();
+        var result = await client.TestConnectionAsync(CancellationToken.None);
 
         // Assert
         result.Should().BeFalse();
@@ -160,7 +166,7 @@ public class CalDAVClientInvalidCredentialsTests
         using var client = new CalDAVClient("https://invalid-server.example.com/caldav/", "invalid", "invalid");
 
         // Act
-        var result = await client.InitializeAsync();
+        var result = await client.InitializeAsync(CancellationToken.None);
 
         // Assert
         result.Should().BeFalse();
@@ -173,7 +179,7 @@ public class CalDAVClientInvalidCredentialsTests
         using var client = new CalDAVClient("https://invalid-server.example.com/caldav/", "invalid", "invalid");
 
         // Act & Assert
-        await client.Invoking(c => c.GetCalendarsAsync())
+        await client.Invoking(c => c.GetCalendarsAsync(CancellationToken.None))
             .Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Calendar home URL not discovered*");
     }

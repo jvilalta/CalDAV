@@ -13,18 +13,25 @@ class Program
         Console.WriteLine("CalDAV Client for C# - Examples");
         Console.WriteLine("================================");
 
+        using var cts = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+        };
+
         // Check if user wants to run advanced example
         if (args.Length > 0 && args[0].ToLower() == "advanced")
         {
-            await AdvancedExample.RunAsync();
+            await AdvancedExample.RunAsync(cts.Token);
             return;
         }
 
         // Basic example
-        await RunBasicExample();
+        await RunBasicExample(cts.Token);
     }
 
-    static async Task RunBasicExample()
+    static async Task RunBasicExample(CancellationToken cancellationToken = default)
     {
         Console.WriteLine("Basic Example");
         Console.WriteLine("============");
@@ -64,7 +71,7 @@ class Program
 
             // Test connection
             Console.WriteLine("Testing connection...");
-            var isConnected = await client.TestConnectionAsync();
+            var isConnected = await client.TestConnectionAsync(cancellationToken);
             if (!isConnected)
             {
                 Console.WriteLine("? Failed to connect to CalDAV server.");
@@ -76,7 +83,7 @@ class Program
 
             // Initialize the client (discover endpoints)
             Console.WriteLine("Initializing client...");
-            var initialized = await client.InitializeAsync();
+            var initialized = await client.InitializeAsync(cancellationToken);
             if (!initialized)
             {
                 Console.WriteLine("? Failed to initialize CalDAV client.");
@@ -87,7 +94,7 @@ class Program
 
             // Get list of calendars
             Console.WriteLine("\nFetching calendars...");
-            var calendars = await client.GetCalendarsAsync();
+            var calendars = await client.GetCalendarsAsync(cancellationToken);
             
             Console.WriteLine($"Found {calendars.Count} calendar(s):");
             foreach (var calendar in calendars)
@@ -105,7 +112,7 @@ class Program
 
                 // Get events from the first calendar
                 Console.WriteLine("Fetching events...");
-                var events = await client.GetEventsAsync(firstCalendar.Url);
+                var events = await client.GetEventsAsync(firstCalendar.Url, cancellationToken: cancellationToken);
                 Console.WriteLine($"Found {events.Count} event(s):");
                 
                 foreach (var evt in events.Take(5)) // Show first 5 events
@@ -130,7 +137,7 @@ class Program
 
                 try
                 {
-                    var eventUrl = await client.CreateEventAsync(firstCalendar.Url, newEventData);
+                    var eventUrl = await client.CreateEventAsync(firstCalendar.Url, newEventData, cancellationToken: cancellationToken);
                     Console.WriteLine($"? Event created successfully at: {eventUrl}");
                 }
                 catch (Exception ex)

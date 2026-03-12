@@ -9,7 +9,7 @@ namespace CalDAV.Examples;
 /// </summary>
 public class AdvancedExample
 {
-    public static async Task RunAsync()
+    public static async Task RunAsync(CancellationToken cancellationToken = default)
     {
         Console.WriteLine("Advanced CalDAV Client Example");
         Console.WriteLine("==============================");
@@ -27,13 +27,13 @@ public class AdvancedExample
         try
         {
             // Test connection and initialize
-            if (!await client.TestConnectionAsync())
+            if (!await client.TestConnectionAsync(cancellationToken))
             {
                 Console.WriteLine("? Failed to connect to CalDAV server");
                 return;
             }
 
-            if (!await client.InitializeAsync())
+            if (!await client.InitializeAsync(cancellationToken))
             {
                 Console.WriteLine("? Failed to initialize CalDAV client");
                 return;
@@ -42,13 +42,13 @@ public class AdvancedExample
             Console.WriteLine("? Successfully connected and initialized");
 
             // Demonstrate calendar operations
-            await DemonstrateCalendarOperations(client);
+            await DemonstrateCalendarOperations(client, cancellationToken);
             
             // Demonstrate event operations
-            await DemonstrateEventOperations(client);
+            await DemonstrateEventOperations(client, cancellationToken);
             
             // Demonstrate advanced event creation
-            await DemonstrateAdvancedEventCreation(client);
+            await DemonstrateAdvancedEventCreation(client, cancellationToken);
 
         }
         catch (Exception ex)
@@ -61,12 +61,12 @@ public class AdvancedExample
         }
     }
 
-    private static async Task DemonstrateCalendarOperations(CalDAVClient client)
+    private static async Task DemonstrateCalendarOperations(CalDAVClient client, CancellationToken cancellationToken)
     {
         Console.WriteLine("\n?? Calendar Operations");
         Console.WriteLine("---------------------");
 
-        var calendars = await client.GetCalendarsAsync();
+        var calendars = await client.GetCalendarsAsync(cancellationToken);
         Console.WriteLine($"Found {calendars.Count} calendars:");
 
         foreach (var calendar in calendars)
@@ -80,12 +80,12 @@ public class AdvancedExample
         }
     }
 
-    private static async Task DemonstrateEventOperations(CalDAVClient client)
+    private static async Task DemonstrateEventOperations(CalDAVClient client, CancellationToken cancellationToken)
     {
         Console.WriteLine("\n?? Event Operations");
         Console.WriteLine("------------------");
 
-        var calendars = await client.GetCalendarsAsync();
+        var calendars = await client.GetCalendarsAsync(cancellationToken);
         if (calendars.Count == 0)
         {
             Console.WriteLine("No calendars available for event operations");
@@ -100,7 +100,7 @@ public class AdvancedExample
         var endDate = DateTime.Today.AddDays(30);
         
         Console.WriteLine($"Fetching events from {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}...");
-        var events = await client.GetEventsAsync(targetCalendar.Url, startDate, endDate);
+        var events = await client.GetEventsAsync(targetCalendar.Url, startDate, endDate, cancellationToken);
         
         Console.WriteLine($"Found {events.Count} events:");
         foreach (var evt in events.Take(10)) // Show first 10 events
@@ -120,12 +120,12 @@ public class AdvancedExample
         }
     }
 
-    private static async Task DemonstrateAdvancedEventCreation(CalDAVClient client)
+    private static async Task DemonstrateAdvancedEventCreation(CalDAVClient client, CancellationToken cancellationToken)
     {
         Console.WriteLine("\n? Advanced Event Creation");
         Console.WriteLine("-------------------------");
 
-        var calendars = await client.GetCalendarsAsync();
+        var calendars = await client.GetCalendarsAsync(cancellationToken);
         if (calendars.Count == 0)
         {
             Console.WriteLine("No calendars available for event creation");
@@ -136,16 +136,16 @@ public class AdvancedExample
         Console.WriteLine($"Creating events in calendar: {targetCalendar.DisplayName}");
 
         // Create a simple event
-        await CreateSimpleEvent(client, targetCalendar);
+        await CreateSimpleEvent(client, targetCalendar, cancellationToken);
         
         // Create a complex event with attendees
-        await CreateComplexEvent(client, targetCalendar);
+        await CreateComplexEvent(client, targetCalendar, cancellationToken);
         
         // Create a recurring event (basic example)
-        await CreateRecurringEvent(client, targetCalendar);
+        await CreateRecurringEvent(client, targetCalendar, cancellationToken);
     }
 
-    private static async Task CreateSimpleEvent(CalDAVClient client, Calendar calendar)
+    private static async Task CreateSimpleEvent(CalDAVClient client, Calendar calendar, CancellationToken cancellationToken)
     {
         try
         {
@@ -159,7 +159,7 @@ public class AdvancedExample
                 "Test Location"
             );
 
-            var eventUrl = await client.CreateEventAsync(calendar.Url, simpleEventData);
+            var eventUrl = await client.CreateEventAsync(calendar.Url, simpleEventData, cancellationToken: cancellationToken);
             Console.WriteLine($"? Simple event created: {eventUrl}");
         }
         catch (Exception ex)
@@ -168,7 +168,7 @@ public class AdvancedExample
         }
     }
 
-    private static async Task CreateComplexEvent(CalDAVClient client, Calendar calendar)
+    private static async Task CreateComplexEvent(CalDAVClient client, Calendar calendar, CancellationToken cancellationToken)
     {
         try
         {
@@ -192,7 +192,7 @@ public class AdvancedExample
             };
 
             var complexEventData = ICalendarGenerator.GenerateEvent(complexEvent);
-            var eventUrl = await client.CreateEventAsync(calendar.Url, complexEventData);
+            var eventUrl = await client.CreateEventAsync(calendar.Url, complexEventData, cancellationToken: cancellationToken);
             Console.WriteLine($"? Complex event created: {eventUrl}");
         }
         catch (Exception ex)
@@ -201,7 +201,7 @@ public class AdvancedExample
         }
     }
 
-    private static async Task CreateRecurringEvent(CalDAVClient client, Calendar calendar)
+    private static async Task CreateRecurringEvent(CalDAVClient client, Calendar calendar, CancellationToken cancellationToken)
     {
         try
         {
@@ -225,7 +225,7 @@ RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR;COUNT=10
 END:VEVENT
 END:VCALENDAR";
 
-            var eventUrl = await client.CreateEventAsync(calendar.Url, recurringEventData);
+            var eventUrl = await client.CreateEventAsync(calendar.Url, recurringEventData, cancellationToken: cancellationToken);
             Console.WriteLine($"? Recurring event created: {eventUrl}");
         }
         catch (Exception ex)
