@@ -38,11 +38,11 @@ public class CalDAVClient : IDisposable
     /// Tests the connection to the CalDAV server
     /// </summary>
     /// <returns>True if connection is successful, false otherwise</returns>
-    public async Task<bool> TestConnectionAsync()
+    public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Options, _credentials.ServerUrl));
+            var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Options, _credentials.ServerUrl), cancellationToken);
             return response.IsSuccessStatusCode;
         }
         catch
@@ -54,17 +54,17 @@ public class CalDAVClient : IDisposable
     /// <summary>
     /// Discovers and initializes the CalDAV service endpoints
     /// </summary>
-    public async Task<bool> InitializeAsync()
+    public async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             // Step 1: Discover current user principal
-            _principalUrl = await DiscoverCurrentUserPrincipalAsync();
+            _principalUrl = await DiscoverCurrentUserPrincipalAsync(cancellationToken);
             if (string.IsNullOrEmpty(_principalUrl))
                 return false;
 
             // Step 2: Discover calendar home
-            _calendarHomeUrl = await DiscoverCalendarHomeAsync(_principalUrl);
+            _calendarHomeUrl = await DiscoverCalendarHomeAsync(_principalUrl, cancellationToken);
             return !string.IsNullOrEmpty(_calendarHomeUrl);
         }
         catch
@@ -77,11 +77,11 @@ public class CalDAVClient : IDisposable
     /// Gets the list of available calendars
     /// </summary>
     /// <returns>List of calendars</returns>
-    public async Task<List<Calendar>> GetCalendarsAsync()
+    public async Task<List<Calendar>> GetCalendarsAsync(CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(_calendarHomeUrl))
         {
-            await InitializeAsync();
+            await InitializeAsync(cancellationToken);
         }
 
         if (string.IsNullOrEmpty(_calendarHomeUrl))
@@ -92,10 +92,10 @@ public class CalDAVClient : IDisposable
         request.Content = new StringContent(CalDAVXmlGenerator.GenerateCalendarPropfindXml(), 
                                           Encoding.UTF8, "application/xml");
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var xmlContent = await response.Content.ReadAsStringAsync();
+        var xmlContent = await response.Content.ReadAsStringAsync(cancellationToken);
         return CalDAVXmlParser.ParseCalendarList(xmlContent);
     }
 
@@ -105,18 +105,19 @@ public class CalDAVClient : IDisposable
     /// <param name="calendarUrl">The URL of the calendar</param>
     /// <param name="startTime">Optional start time filter</param>
     /// <param name="endTime">Optional end time filter</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>List of calendar events</returns>
-    public async Task<List<CalendarEvent>> GetEventsAsync(string calendarUrl, DateTime? startTime = null, DateTime? endTime = null)
+    public async Task<List<CalendarEvent>> GetEventsAsync(string calendarUrl, DateTime? startTime = null, DateTime? endTime = null, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(new HttpMethod("REPORT"), calendarUrl);
         request.Headers.Add("Depth", "1");
         request.Content = new StringContent(CalDAVXmlGenerator.GenerateCalendarReportXml(startTime, endTime), 
                                           Encoding.UTF8, "application/xml");
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var xmlContent = await response.Content.ReadAsStringAsync();
+        var xmlContent = await response.Content.ReadAsStringAsync(cancellationToken);
         return CalDAVXmlParser.ParseCalendarEvents(xmlContent);
     }
 
@@ -126,8 +127,9 @@ public class CalDAVClient : IDisposable
     /// <param name="calendarUrl">The URL of the calendar</param>
     /// <param name="eventData">The iCalendar data for the event</param>
     /// <param name="eventUid">Optional UID for the event (will be generated if not provided)</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The URL of the created event</returns>
-    public async Task<string> CreateEventAsync(string calendarUrl, string eventData, string? eventUid = null)
+    public async Task<string> CreateEventAsync(string calendarUrl, string eventData, string? eventUid = null, CancellationToken cancellationToken = default)
     {
         eventUid ??= Guid.NewGuid().ToString();
         var eventUrl = $"{calendarUrl.TrimEnd('/')}/{eventUid}.ics";
@@ -136,7 +138,7 @@ public class CalDAVClient : IDisposable
         request.Content = new StringContent(eventData, Encoding.UTF8, "text/calendar");
         request.Headers.Add("If-None-Match", "*"); // Ensure we don't overwrite existing events
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         return eventUrl;
@@ -148,7 +150,8 @@ public class CalDAVClient : IDisposable
     /// <param name="eventUrl">The URL of the event to update</param>
     /// <param name="eventData">The updated iCalendar data</param>
     /// <param name="etag">The ETag of the event for optimistic concurrency</param>
-    public async Task UpdateEventAsync(string eventUrl, string eventData, string? etag = null)
+    /// <param name="cancellationToken">The cancellation token</param>
+    public async Task UpdateEventAsync(string eventUrl, string eventData, string? etag = null, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Put, eventUrl);
         request.Content = new StringContent(eventData, Encoding.UTF8, "text/calendar");
@@ -158,7 +161,7 @@ public class CalDAVClient : IDisposable
             request.Headers.Add("If-Match", $"\"{etag}\"");
         }
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -167,7 +170,8 @@ public class CalDAVClient : IDisposable
     /// </summary>
     /// <param name="eventUrl">The URL of the event to delete</param>
     /// <param name="etag">The ETag of the event for optimistic concurrency</param>
-    public async Task DeleteEventAsync(string eventUrl, string? etag = null)
+    /// <param name="cancellationToken">The cancellation token</param>
+    public async Task DeleteEventAsync(string eventUrl, string? etag = null, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, eventUrl);
         
@@ -176,24 +180,24 @@ public class CalDAVClient : IDisposable
             request.Headers.Add("If-Match", $"\"{etag}\"");
         }
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
     /// <summary>
     /// Discovers the current user principal URL
     /// </summary>
-    private async Task<string?> DiscoverCurrentUserPrincipalAsync()
+    private async Task<string?> DiscoverCurrentUserPrincipalAsync(CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(new HttpMethod("PROPFIND"), _credentials.ServerUrl);
         request.Headers.Add("Depth", "0");
         request.Content = new StringContent(CalDAVXmlGenerator.GenerateCurrentUserPrincipalXml(), 
                                           Encoding.UTF8, "application/xml");
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        var xmlContent = await response.Content.ReadAsStringAsync();
+        var xmlContent = await response.Content.ReadAsStringAsync(cancellationToken);
         var principalPath = CalDAVXmlParser.ExtractHref(xmlContent, "//d:current-user-principal/d:href");
         
         if (string.IsNullOrEmpty(principalPath)) return null;
@@ -205,17 +209,17 @@ public class CalDAVClient : IDisposable
     /// <summary>
     /// Discovers the calendar home URL for the user
     /// </summary>
-    private async Task<string?> DiscoverCalendarHomeAsync(string principalUrl)
+    private async Task<string?> DiscoverCalendarHomeAsync(string principalUrl, CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(new HttpMethod("PROPFIND"), principalUrl);
         request.Headers.Add("Depth", "0");
         request.Content = new StringContent(CalDAVXmlGenerator.GenerateCalendarHomeXml(), 
                                           Encoding.UTF8, "application/xml");
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        var xmlContent = await response.Content.ReadAsStringAsync();
+        var xmlContent = await response.Content.ReadAsStringAsync(cancellationToken);
         var calendarHomePath = CalDAVXmlParser.ExtractHref(xmlContent, "//c:calendar-home-set/d:href");
         
         if (string.IsNullOrEmpty(calendarHomePath)) return null;
