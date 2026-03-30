@@ -27,11 +27,28 @@ public class CalDAVClient : IDisposable
         _httpClient = new HttpClient();
         
         // Set up basic authentication
-        var authValue = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
+        _httpClient.DefaultRequestHeaders.Authorization = CreateAuthenticationHeaderValue(username, password);
         
         // Set default headers for CalDAV
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "CalDAV-Client-CSharp/1.0");
+    }
+    
+    /// <summary>
+    /// Creates a new CalDAV client instance with a provided HttpClient (useful for adding resilience like retries)
+    /// </summary>
+    /// <param name="serverUrl">The CalDAV server URL (e.g., https://cal.example.com/caldav/)</param>
+    /// <param name="username">Username for authentication</param>
+    /// <param name="password">Password for authentication</param>
+    /// <param name="httpClient">HttpClient instance to use for requests. This allows injecting resilience like retry policies, timeouts, etc.</param>
+    public CalDAVClient(string serverUrl, string username, string password, HttpClient httpClient)
+    {
+        _credentials = new CalDAVCredentials(serverUrl, username, password);
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        
+        if (_httpClient.DefaultRequestHeaders.Authorization == null)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = CreateAuthenticationHeaderValue(username, password);
+        }
     }
 
     /// <summary>
@@ -239,5 +256,12 @@ public class CalDAVClient : IDisposable
     public void Dispose()
     {
         _httpClient?.Dispose();
+    }
+
+    private static AuthenticationHeaderValue CreateAuthenticationHeaderValue(string username, string password)
+    {
+        var authValue = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
+        var authenticationHeaderValue = new AuthenticationHeaderValue("Basic", authValue);
+        return authenticationHeaderValue;
     }
 }
