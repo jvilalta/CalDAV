@@ -105,7 +105,7 @@ public class CalDAVClientAsyncTests
     public async Task TestConnectionAsync_WithInvalidServer_ShouldReturnFalse()
     {
         // Act
-        var result = await _client.TestConnectionAsync();
+        var result = await _client.TestConnectionAsync(CancellationToken.None);
 
         // Assert
         result.Should().BeFalse();
@@ -115,7 +115,7 @@ public class CalDAVClientAsyncTests
     public async Task InitializeAsync_WithInvalidServer_ShouldReturnFalse()
     {
         // Act
-        var result = await _client.InitializeAsync();
+        var result = await _client.InitializeAsync(CancellationToken.None);
 
         // Assert
         result.Should().BeFalse();
@@ -125,7 +125,7 @@ public class CalDAVClientAsyncTests
     public async Task GetCalendarsAsync_WithoutInitialization_ShouldThrowInvalidOperationException()
     {
         // Act & Assert
-        await _client.Invoking(c => c.GetCalendarsAsync())
+        await _client.Invoking(c => c.GetCalendarsAsync(CancellationToken.None))
             .Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Calendar home URL not discovered*");
     }
@@ -141,7 +141,7 @@ public class CalDAVClientAsyncTests
         );
 
         // Act & Assert
-        await _client.Invoking(c => c.CreateEventAsync("invalid-url", eventData))
+        await _client.Invoking(c => c.CreateEventAsync("invalid-url", eventData, cancellationToken: CancellationToken.None))
             .Should().ThrowAsync<Exception>();
     }
 
@@ -156,7 +156,7 @@ public class CalDAVClientAsyncTests
         );
 
         // Act & Assert
-        await _client.Invoking(c => c.UpdateEventAsync("invalid-url", eventData))
+        await _client.Invoking(c => c.UpdateEventAsync("invalid-url", eventData, cancellationToken: CancellationToken.None))
             .Should().ThrowAsync<Exception>();
     }
 
@@ -164,7 +164,37 @@ public class CalDAVClientAsyncTests
     public async Task DeleteEventAsync_WithInvalidEventUrl_ShouldThrow()
     {
         // Act & Assert
-        await _client.Invoking(c => c.DeleteEventAsync("invalid-url"))
+        await _client.Invoking(c => c.DeleteEventAsync("invalid-url", cancellationToken: CancellationToken.None))
             .Should().ThrowAsync<Exception>();
+    }
+
+    [Test]
+    public async Task TestConnectionAsync_WithCancelledToken_ShouldThrowOrReturnFalse()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act
+        // A pre-cancelled token causes SendAsync to throw OperationCanceledException,
+        // which the catch-all in TestConnectionAsync converts to false.
+        var result = await _client.TestConnectionAsync(cts.Token);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task InitializeAsync_WithCancelledToken_ShouldReturnFalse()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act
+        var result = await _client.InitializeAsync(cts.Token);
+
+        // Assert
+        result.Should().BeFalse();
     }
 }
