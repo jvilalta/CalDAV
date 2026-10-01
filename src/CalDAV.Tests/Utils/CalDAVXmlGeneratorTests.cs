@@ -47,6 +47,32 @@ public class CalDAVXmlGeneratorTests
     }
 
     [Test]
+    public void GenerateSyncCollectionReportXml_ShouldIncludeSyncTokenAndDeletedSupport()
+    {
+        // Act
+        var xml = CalDAVXmlGenerator.GenerateSyncCollectionReportXml("abc123");
+
+        // Assert
+        xml.Should().Contain("<d:sync-collection");
+        xml.Should().Contain("<d:sync-level>1</d:sync-level>");
+        xml.Should().Contain("<d:sync-token>abc123</d:sync-token>");
+        xml.Should().Contain("<d:getetag />");
+        xml.Should().Contain("<c:calendar-data />");
+        xml.Should().Contain("</d:sync-collection>");
+    }
+
+    [Test]
+    public void GenerateSyncCollectionReportXml_WithoutToken_ShouldEmitEmptySyncTokenElement()
+    {
+        // Act
+        var xml = CalDAVXmlGenerator.GenerateSyncCollectionReportXml();
+
+        // Assert
+        xml.Should().Contain("<d:sync-level>1</d:sync-level>");
+        xml.Should().Contain("<d:sync-token />");
+    }
+
+    [Test]
     public void GenerateCalendarReportXml_WithTimeRange_ShouldUseProvidedDates()
     {
         // Arrange

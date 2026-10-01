@@ -122,19 +122,34 @@ public class CalDAVClient : IDisposable
     }
 
     /// <summary>
-    /// Gets events from a specific calendar
+    /// Gets events from a specific calendar using a standard calendar-query REPORT.
     /// </summary>
     /// <param name="calendarUrl">The URL of the calendar</param>
     /// <param name="startTime">Optional start time filter</param>
     /// <param name="endTime">Optional end time filter</param>
     /// <param name="cancellationToken">A token to cancel the operation</param>
     /// <returns>List of calendar events</returns>
-    public async Task<List<CalendarEvent>> GetEventsAsync(string calendarUrl, DateTime? startTime = null, DateTime? endTime = null, CancellationToken cancellationToken = default)
+    public Task<List<CalendarEvent>> GetEventsAsync(string calendarUrl, DateTime? startTime = null, DateTime? endTime = null, CancellationToken cancellationToken = default)
+        => GetEventsAsync(calendarUrl, syncToken: null, startTime, endTime, cancellationToken);
+
+    /// <summary>
+    /// Gets events from a specific calendar using either a calendar-query or sync-collection REPORT.
+    /// </summary>
+    /// <param name="calendarUrl">The URL of the calendar</param>
+    /// <param name="syncToken">Optional sync token; when supplied, the method uses a sync-collection REPORT.</param>
+    /// <param name="startTime">Optional start time filter</param>
+    /// <param name="endTime">Optional end time filter</param>
+    /// <param name="cancellationToken">A token to cancel the operation</param>
+    /// <returns>List of calendar events</returns>
+    public async Task<List<CalendarEvent>> GetEventsAsync(string calendarUrl, string? syncToken, DateTime? startTime = null, DateTime? endTime = null, CancellationToken cancellationToken = default)
     {
+        var xml = string.IsNullOrWhiteSpace(syncToken)
+            ? CalDAVXmlGenerator.GenerateCalendarReportXml(startTime, endTime)
+            : CalDAVXmlGenerator.GenerateSyncCollectionReportXml(syncToken);
+
         var request = new HttpRequestMessage(new HttpMethod("REPORT"), calendarUrl);
         request.Headers.Add("Depth", "1");
-        request.Content = new StringContent(CalDAVXmlGenerator.GenerateCalendarReportXml(startTime, endTime), 
-                                          Encoding.UTF8, "application/xml");
+        request.Content = new StringContent(xml, Encoding.UTF8, "application/xml");
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();

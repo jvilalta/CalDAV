@@ -170,6 +170,27 @@ END:VCALENDAR</c:calendar-data>
     }
 
     [Test]
+    public void ParseCalendarEvents_WithDeletedEntryResponse_ShouldReturnDeletedHref()
+    {
+        // Arrange
+        const string xmlWithDeletedEntry = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<d:multistatus xmlns:d=""DAV:"" xmlns:c=""urn:ietf:params:xml:ns:caldav"">
+  <d:response>
+    <d:href>/calendars/user/personal/deleted-event.ics</d:href>
+    <d:status>HTTP/1.1 404 Not Found</d:status>
+  </d:response>
+</d:multistatus>";
+
+        // Act
+        var events = CalDAVXmlParser.ParseCalendarEvents(xmlWithDeletedEntry);
+
+        // Assert
+        events.Should().HaveCount(1);
+        events[0].Href.Should().Be("/calendars/user/personal/deleted-event.ics");
+        events[0].ICalendarData.Should().BeEmpty();
+    }
+
+    [Test]
     public void ParseCalendarEvents_WithEmptyXml_ShouldReturnEmptyList()
     {
         // Arrange

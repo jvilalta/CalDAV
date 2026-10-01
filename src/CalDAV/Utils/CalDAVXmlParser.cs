@@ -73,14 +73,20 @@ public static class CalDAVXmlParser
         foreach (XmlNode response in responses)
         {
             var calendarData = response.SelectSingleNode(".//c:calendar-data", namespaceManager);
+            var href = response.SelectSingleNode("d:href", namespaceManager);
+            var etag = response.SelectSingleNode(".//d:getetag", namespaceManager);
+            var status = response.SelectSingleNode(".//d:status", namespaceManager);
+
+            if (status != null && IsNotFoundStatus(status.InnerText) && href != null)
+            {
+                events.Add(new Models.CalendarEvent { Href = href.InnerText, ETag = etag?.InnerText.Trim('"') ?? string.Empty, ICalendarData = string.Empty });
+                continue;
+            }
+
             if (calendarData == null) continue;
 
             var calEvent = new Models.CalendarEvent();
-            
-            var href = response.SelectSingleNode("d:href", namespaceManager);
             if (href != null) calEvent.Href = href.InnerText;
-
-            var etag = response.SelectSingleNode(".//d:getetag", namespaceManager);
             if (etag != null) calEvent.ETag = etag.InnerText.Trim('"');
 
             calEvent.ICalendarData = calendarData.InnerText;
@@ -161,5 +167,13 @@ public static class CalDAVXmlParser
 
         var hrefNode = doc.SelectSingleNode(xpath, namespaceManager);
         return hrefNode?.InnerText ?? string.Empty;
+    }
+
+    private static bool IsNotFoundStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status)) return false;
+
+        var parts = status.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length >= 2 && parts[1] == "404";
     }
 }
